@@ -111,6 +111,11 @@ class HomeViewModel {
         rightColumnHeight = 0
     }
     
+    public func getAspectRatioHeight(imgWidth : Int, imgHeight : Int, containerWidth : CGFloat) -> CGFloat {
+        let aspectRatio : CGFloat = CGFloat(Float(imgWidth) / Float(imgHeight))
+        return containerWidth / aspectRatio
+    }
+    
     public func handleSearchField(text: String) {
         if (text.count == 0) {
             getRandomPhotos()

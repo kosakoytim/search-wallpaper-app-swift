@@ -17,12 +17,15 @@ class HomeViewController : UIViewController {
     private var imagesDisplayLeftCol = [UnsplashImage]()
     private var imagesDisplayRightCol = [UnsplashImage]()
     
-    @IBOutlet weak var searchTextField: UITextField!
     @IBOutlet weak var heightConstraint: NSLayoutConstraint!
+    
+    @IBOutlet weak var searchTextField: UITextField!
+    
     @IBOutlet weak var unsplashImageColViewLeft: UICollectionView!
     @IBOutlet weak var unsplashImageColViewRight: UICollectionView!
     @IBOutlet weak var homeScrollView: UIScrollView!
     private let homeViewModel = HomeViewModel()
+    private let disposeBag = DisposeBag()
     @IBOutlet weak var imageFetchingActivityIndicator: UIActivityIndicatorView!
     
     override func viewDidLoad() {
@@ -40,17 +43,17 @@ class HomeViewController : UIViewController {
             } else {
                 self.imageFetchingActivityIndicator.stopAnimating()
             }
-        })
+        }).disposed(by: disposeBag)
         
         homeViewModel.displayImageLeftColumn.subscribe({ data in
             self.imagesDisplayLeftCol.append(data.element!)
             self.unsplashImageColViewLeft.reloadData()
-        })
+        }).disposed(by: disposeBag)
         
         homeViewModel.displayImageRightColumn.subscribe({ data in
             self.imagesDisplayRightCol.append(data.element!)
             self.unsplashImageColViewRight.reloadData()
-        })
+        }).disposed(by: disposeBag)
         
         homeViewModel.resetData.subscribe({ data in
             if (data.element == true) {
@@ -60,7 +63,7 @@ class HomeViewController : UIViewController {
                 self.unsplashImageColViewLeft.reloadData()
                 self.unsplashImageColViewRight.reloadData()
             }
-        })
+        }).disposed(by: disposeBag)
         
         handleTextField()
     }
@@ -72,7 +75,6 @@ class HomeViewController : UIViewController {
     }
     
     @objc func dismissKeyboard() {
-        
         view.endEditing(true)
     }
 }
@@ -120,21 +122,42 @@ extension HomeViewController : UICollectionViewDataSource, UICollectionViewDeleg
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        let collectionViewWidth = collectionView.bounds.width
-        let collectionViewHorizontalSectionInset : CGFloat = 0
-        let layout = collectionViewLayout as! UICollectionViewFlowLayout
-        let cellSpace = layout.minimumLineSpacing
-        let adjustedWidth = collectionViewWidth - cellSpace - collectionViewHorizontalSectionInset
-        let width = adjustedWidth
+        var width : CGFloat = 0
         var height : CGFloat = 0
         
         if (collectionView == unsplashImageColViewLeft) {
-            let aspectRatio : CGFloat = CGFloat(Float(self.imagesDisplayLeftCol[indexPath.item].width) / Float(self.imagesDisplayLeftCol[indexPath.item].height))
-            height = adjustedWidth / aspectRatio
+            print("set size on index path \(indexPath.item)")
+            let collectionViewWidth = collectionView.bounds.width
+            let collectionViewHorizontalSectionInset : CGFloat = 0
+            let layout = collectionViewLayout as! UICollectionViewFlowLayout
+            let cellSpace = layout.minimumLineSpacing
+            let adjustedWidth = collectionViewWidth - cellSpace - collectionViewHorizontalSectionInset
+            width = adjustedWidth
+            
+//            print("collectionViewWidth \(collectionViewWidth)")
+//            print("collectionViewHorizontalSectionInset \(collectionViewHorizontalSectionInset)")
+//            print("cellSpace \(cellSpace)")
+//            print("adjustedWidth \(adjustedWidth)")
+            
+            height = homeViewModel.getAspectRatioHeight(
+                imgWidth: self.imagesDisplayLeftCol[indexPath.item].width,
+                imgHeight: self.imagesDisplayLeftCol[indexPath.item].height,
+                containerWidth: width
+            )
             heightConstraint.constant = heightConstraint.constant + height
         } else {
-            let aspectRatio : CGFloat = CGFloat(Float(self.imagesDisplayRightCol[indexPath.item].width) / Float(self.imagesDisplayRightCol[indexPath.item].height))
-            height = adjustedWidth / aspectRatio
+            let collectionViewWidth = collectionView.bounds.width
+            let collectionViewHorizontalSectionInset : CGFloat = 0
+            let layout = collectionViewLayout as! UICollectionViewFlowLayout
+            let cellSpace = layout.minimumLineSpacing
+            let adjustedWidth = collectionViewWidth - cellSpace - collectionViewHorizontalSectionInset
+            width = adjustedWidth
+            
+            height = homeViewModel.getAspectRatioHeight(
+                imgWidth: self.imagesDisplayRightCol[indexPath.item].width,
+                imgHeight: self.imagesDisplayRightCol[indexPath.item].height,
+                containerWidth: width
+            )
         }
         
         return CGSize(width: width, height: height)
